@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  frontend:
+    build: ./websockets/ # specify the directory of the Dockerfile
+    ports:
+      - "4200:4200" #specify ports forewarding
+      - "49153:49153"
+    expose:
+      - "4200"
+      - "49153"
+    command: npm run dockerStart
+    volumes:
+      - ./websockets/:/code
+volumes:
+    db_data: {}

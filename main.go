@@ -13,6 +13,11 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+type UserMessage struct {
+	User    string `json:"User"`
+	Message string `json:"Message"`
+}
+
 func main() {
 	// Needed here so go will allow outside origins, currently set to allow everything
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -22,18 +27,19 @@ func main() {
 		conn, _ := upgrader.Upgrade(w, r, nil) // error ignored for sake of simplicity
 
 		for {
+			var msg UserMessage
 			// Read message from browser
-			msgType, msg, err := conn.ReadMessage()
+			err := conn.ReadJSON(&msg)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
 			// Print the message to the console
-			fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
+			//fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), string(msg))
 
 			// Write message back to browser
-			if err = conn.WriteMessage(msgType, msg); err != nil {
+			if err = conn.WriteJSON(msg); err != nil {
 				return
 			}
 		}

@@ -1,1 +1,13 @@
 <button mat-raised-button color="primary" (click)="sendMessage()">Primary</button>
+<form (ngSubmit)="sendMessage()" #heroForm="ngForm">
+  <div class="form-group">
+    <label for="name">Name</label>
+    <input type="text" class="form-control" id="name"
+           required
+           [(ngModel)]="message.message" name="name">
+  </div>
+  </form>
+
+  <div *ngFor="let message of messages">
+    <h2>{{message.user}}</h2>
+    <p>{{message.message}}</p></div>

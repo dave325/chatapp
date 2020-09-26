@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { map, tap, catchError, retry } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 
-interface Message {
+interface UserMessage {
   user: string;
   message: string;
 }
@@ -14,8 +14,19 @@ interface Message {
 })
 export class AppComponent {
   title = 'websockets';
-  myWebSocket: WebSocketSubject<any> = webSocket("ws://localhost:3001/echo");
-  message: Message = {user:"1", message:""};
+  myWebSocket: WebSocketSubject<any> = webSocket({
+    url: "ws://localhost:3001/echo",
+    resultSelector:(data) => {
+      console.log(data)
+    },
+    openObserver: {
+      next: (data) => {
+        console.log(data)
+      }
+    },
+  });
+
+  message: UserMessage = {user:"1", message:""};
   messages: Array<any> = [];
   constructor(){
     this.myWebSocket.asObservable().subscribe(
@@ -28,7 +39,7 @@ export class AppComponent {
   }
 
   sendMessage(): void{
-
+    console.log(this.myWebSocket)
     this.myWebSocket.next(this.message);
     this.message = {user:"1", message:""};
   }

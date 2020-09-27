@@ -1,4 +1,6 @@
 <button mat-raised-button color="primary" (click)="sendMessage()">Primary</button>
+<h2>Users</h2>
+<p *ngFor="let user of users" (click)="connectUser(user)">{{user}}</p>
 <form (ngSubmit)="sendMessage()" #heroForm="ngForm">
   <div class="form-group">
     <label for="name">Name</label>

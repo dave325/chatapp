@@ -86,13 +86,11 @@ export class AppComponent implements OnDestroy{
       openObserver: {
         next: (data) => {
           console.log(data)
-          window.sessionStorage.setItem('X-DAVE-TEST', this.totalUsers.toString())
-          this.users.push(this.totalUsers)
         }
       },
     });
 
-    this.communicaitonSocket.subscribe(
+    this.communicaitonSocket.asObservable().subscribe(
       msg => {
         console.log(msg);
         this.messages.push({user: msg.User, message: msg.Message});
@@ -144,8 +142,9 @@ export class AppComponent implements OnDestroy{
     for(const [key, chat] of this.sockets){
       chat.chat.unsubscribe();
       chat.chat.complete();
-      this.myWebSocket.unsubscribe()
     }
+    this.myWebSocket.unsubscribe()
+    this.communicaitonSocket.unsubscribe()
   }
 
 }

@@ -5,12 +5,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -49,12 +53,14 @@ type Client struct {
 }
 
 type UserMessage struct {
-	User    string `json:"User"`
-	Message string `json:"Message"`
+	User    string `json:"user" bson:"user"`
+	Message string `json:"message" bson:"message"`
+	Room    string `json:"room" bson:"room"`
 }
 
 type UserList struct {
-	User string `json:User`
+	ID   primitive.ObjectID `bson:"_id,omitempty"`
+	User string             `json:"user" bson:"user"`
 }
 
 var msg UserMessage
@@ -66,6 +72,9 @@ var user UserList
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
 func (c *Client) readPump() {
+
+	collection := client.Database("chat").Collection("messages")
+
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -75,9 +84,20 @@ func (c *Client) readPump() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		err := c.conn.ReadJSON(&msg)
+		if err != nil {
+			log.Printf("error: %v", err)
+			break
+		}
 		var message []byte
 		message, err = json.Marshal(msg)
-		print(message)
+		bsonMessage, _ := bson.Marshal(msg)
+
+		_, insertErr := collection.InsertOne(context.Background(), bsonMessage)
+		if insertErr != nil {
+			log.Println(insertErr)
+			return
+		}
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -108,14 +128,19 @@ func (c *Client) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			var messageJSON UserMessage
+
+			messageJSON := UserMessage{}
 			err := json.Unmarshal([]byte(message), &messageJSON)
+
 			if err != nil {
-				log.Println(err)
+				fmt.Println(err)
+				return
 			}
 
 			err = c.conn.WriteJSON(messageJSON)
+
 			if err != nil {
+				fmt.Println(err.Error())
 				return
 			}
 		case <-ticker.C:
@@ -137,7 +162,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
-
+	print("Hmmmmm")
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
@@ -159,9 +184,12 @@ func (c *Client) readUserListPump() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		err := c.conn.ReadJSON(&user)
+		if err != nil {
+			log.Printf("error: %v", err)
+			break
+		}
 		var message []byte
 		message, err = json.Marshal(user)
-		print(message)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -196,6 +224,7 @@ func (c *Client) writeUserListPump() {
 			err := json.Unmarshal([]byte(curUser), &userJSON)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 
 			err = c.conn.WriteJSON(userJSON)
@@ -212,7 +241,7 @@ func (c *Client) writeUserListPump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveUserListWs(hub *Hub, w http.ResponseWriter, r *http.Request, user string) {
+func serveUserListWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -221,11 +250,7 @@ func serveUserListWs(hub *Hub, w http.ResponseWriter, r *http.Request, user stri
 
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
-	var currentUser UserList
-	currentUser.User = user
-	var message []byte
-	message, err = json.Marshal(currentUser)
-	client.hub.broadcast <- message
+
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writeUserListPump()

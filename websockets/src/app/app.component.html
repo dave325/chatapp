@@ -1,15 +1,24 @@
-<button mat-raised-button color="primary" (click)="sendMessage()">Primary</button>
 <h2>Users</h2>
-<p *ngFor="let user of users" (click)="connectUser(user)">{{user}}</p>
-<form (ngSubmit)="sendMessage()" #heroForm="ngForm">
-  <div class="form-group">
-    <label for="name">Name</label>
-    <input type="text" class="form-control" id="name"
-           required
-           [(ngModel)]="message.message" name="name">
-  </div>
-  </form>
+<p *ngFor="let user of users" (click)="connectUser(user)">{{ user }}</p>
 
-  <div *ngFor="let message of messages">
-    <h2>{{message.user}}</h2>
-    <p>{{message.message}}</p></div>
+<div *ngFor="let recipient of messages | keyvalue">
+  <h2>{{ recipient.key }}</h2>
+  <form (ngSubmit)="sendMessage(recipient.key)" #heroForm="ngForm">
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input
+        type="text"
+        class="form-control"
+        id="name"
+        required
+        [(ngModel)]="message.message"
+        name="name"
+      />
+    </div>
+  </form>
+  <div *ngFor="let message of recipient.value">
+    <h3>{{ message.user }}</h3>
+    <p>{{ message.message }}</p>
+    <p>{{ message.room }}</p>
+  </div>
+</div>

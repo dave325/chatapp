@@ -1,3 +1,6 @@
 *.idea
 *.iml
 *.xml
+
+websockets/src/app/node_modules/*
+websockets/node_modules/

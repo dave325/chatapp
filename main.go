@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"jwt"
 	"log"
 	"net/http"
 	"time"
@@ -138,6 +139,7 @@ func main() {
 			currentUserID = key
 		}
 
+		// Fetch avialable users in db
 		cur, err := collection.Find(ctx, bson.M{"available": true})
 		defer cur.Close(ctx)
 		print(cur.RemainingBatchLength())
@@ -156,7 +158,6 @@ func main() {
 				totalUser[currentIdx] = currentUser.Username
 			}
 			currentIdx++
-			// do something with result....
 		}
 
 		totalStruct := documents{CurrentUser: currentUserID, Users: totalUser}
@@ -170,6 +171,7 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 		w.Write(js)
 	})
+
 	http.HandleFunc("/userList/", func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -224,7 +226,7 @@ func main() {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusAccepted)
 			filterRoom := currentRoom.ID.Hex()
-			log.Println(filterRoom)
+			// log.Println(filterRoom)
 			updatedFilter := bson.M{"room": filterRoom}
 			cursor, cursorErr := collection.Find(ctx, updatedFilter)
 			if cursorErr != nil {
@@ -232,6 +234,7 @@ func main() {
 			}
 			defer cursor.Close(ctx)
 			currentIdx := 0
+			// Fetch messages for the current room
 			currentMessages := make([]*UserMessage, cursor.RemainingBatchLength())
 			for cursor.Next(ctx) {
 				var message UserMessage
@@ -248,6 +251,7 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			// Return all messages and users associated with this room
 			w.Write(js)
 		}
 
@@ -300,7 +304,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Updated %v Documents!\n", result.ModifiedCount)
+		// fmt.Printf("Updated %v Documents!\n", result.ModifiedCount)
 	})
 
 	http.HandleFunc("/sign-up/", func(w http.ResponseWriter, r *http.Request) {
@@ -314,7 +318,6 @@ func main() {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		log.Println("uo")
 		defer r.Body.Close()
 		var currentUser User
 		err = json.Unmarshal(b, &currentUser)
@@ -338,7 +341,6 @@ func main() {
 			log.Println(insertErr)
 			return
 		}
-		log.Println("here")
 		w.WriteHeader(http.StatusOK)
 		token := User{Token: currentUser.Token, Username: currentUser.Username}
 		json.NewEncoder(w).Encode(token)
@@ -355,7 +357,6 @@ func main() {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		log.Println("uo")
 		defer r.Body.Close()
 		var currentUser User
 		err = json.Unmarshal(b, &currentUser)

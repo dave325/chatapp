@@ -50,6 +50,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	room string
 }
 
 type UserMessage struct {
@@ -153,14 +155,14 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request, currentRoom string) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), room: currentRoom}
 	client.hub.register <- client
 	print("Hmmmmm")
 	// Allow collection of memory referenced by the caller by doing all work in

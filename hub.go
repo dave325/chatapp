@@ -20,14 +20,17 @@ type Hub struct {
 	unregister chan *Client
 
 	existingUsers map[string]bool
+
+	userThread bool
 }
 
-func newHub() *Hub {
+func newHub(userThread bool) *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
+		userThread: userThread,
 	}
 }
 

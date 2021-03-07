@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"jwt"
 	"log"
 	"net/http"
 	"time"
@@ -294,7 +293,7 @@ func main() {
 		if !ok || len(keys) == 0 {
 			print("ehhh")
 		}
-		result, err := collection.UpdateOne(
+		_, err := collection.UpdateOne(
 			ctx,
 			bson.M{"username": keys[0]},
 			bson.D{

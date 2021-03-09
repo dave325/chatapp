@@ -12,7 +12,17 @@ services:
     command: npm run dockerStart
     volumes:
       - ./websockets/:/code
-
+  server:
+      build: ./server/ # specify the directory of the Dockerfile
+      ports:
+        - "3001:3001" #specify ports forewarding
+      expose:
+        - "3001"
+      command: go run /go/src/chatapp/main.go /go/src/chatapp/client.go /go/src/chatapp/hub.go
+      volumes:
+        - ./server/:/go/src/chatapp
+      depends_on:
+        - database
   
   database: # name of the third service
     image: mongo:latest # specify image to build container from

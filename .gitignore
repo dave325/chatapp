@@ -4,3 +4,5 @@
 
 websockets/src/app/node_modules/*
 websockets/node_modules/
+server/vendor/*
+server/vendor/

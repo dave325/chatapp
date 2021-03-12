@@ -28,7 +28,7 @@ import (
 var jwtKey = []byte("my-secret-password") // Used for demonstration and github purposes
 var addr = flag.String("addr", ":3001", "http service address")
 var ctx, cancel = context.WithTimeout(context.Background(), 1000*time.Second)
-var client, mongoErr = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@127.0.0.1:27017/"))
+var client, mongoErr = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongodb:27017/"))
 
 var roomMap map[string]*Hub = make(map[string]*Hub)
 

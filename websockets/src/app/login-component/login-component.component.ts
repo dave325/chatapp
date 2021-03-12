@@ -1,34 +1,40 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+interface User {
+  id: string;
+  password: string;
+  token: string;
+  username: string;
+}
 @Component({
   selector: 'app-login-component',
   templateUrl: './login-component.component.html',
   styleUrls: ['./login-component.component.css']
 })
-export class LoginComponentComponent implements OnInit {
+export class LoginComponentComponent {
+  @Input() error: string | null;
 
   loginForm: FormGroup;
   submitted = false;
 
-  constructor(private formBuilder: FormBuilder, private router: Router) { }
+  constructor(private formBuilder: FormBuilder, private router: Router, private http: HttpClient) { }
+  form: FormGroup = new FormGroup({
+    username: new FormControl('', [Validators.required, Validators.minLength(3)]),
+    password: new FormControl('', [Validators.required, Validators.minLength(3)]),
+  });
 
-  ngOnInit() {
-    this.loginForm = this.formBuilder.group({
-      username: ['', Validators.required],
-      password: ['', Validators.required]
-    });
-  }
-
-  get data() { return this.loginForm.controls; }
-
-  onSubmit() {    
-    if (this.loginForm.invalid) {
-      return;
-    } else if (this.data.username.value == localStorage.getItem("username") && this.data.password.value == localStorage.getItem("password")) {
-      this.router.navigate(['/home']);
-    } else {
-      this.submitted = true;      
+  async submit() {
+    if (this.form.valid) {
+      console.log("yuuurrrr", this.form.value);
+      const formValues = this.form.value;
+      // Mark error here 
+      const httpCall: User = await this.http.post<User>("http://localhost:3001/login/", this.form.value).toPromise()
+      console.log(httpCall)
+      window.sessionStorage.setItem("X-DAVE-TEST", JSON.stringify(httpCall))
+      this.router.navigate(["/home"])
     }
   }
+
 }

@@ -9,12 +9,15 @@ import { FormsModule,ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RegistrationComponentComponent } from './registration-component/registration-component.component';
 import { LoginComponentComponent } from './login-component/login-component.component';
+import { HomeComponent } from './home/home.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
     AppComponent,
     RegistrationComponentComponent,
-    LoginComponentComponent
+    LoginComponentComponent,
+    HomeComponent
   ],
   imports: [
     BrowserModule,
@@ -23,6 +26,7 @@ import { LoginComponentComponent } from './login-component/login-component.compo
     ReactiveFormsModule,
     BrowserAnimationsModule,
     HttpClientModule,
+    NgbModule,
   ],
   providers: [],
   schemas:[CUSTOM_ELEMENTS_SCHEMA],

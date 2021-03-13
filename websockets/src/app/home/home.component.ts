@@ -52,7 +52,6 @@ export class HomeComponent implements OnInit {
     let user: any;
     if (userExist) {
       user = await this.http.get("http://localhost:3001/users/?user=" + existingUser.username).toPromise();
-
     } else {
       user = await this.http.get("http://localhost:3001/users/").toPromise();
     }

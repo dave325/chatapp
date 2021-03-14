@@ -133,6 +133,7 @@ export class HomeComponent implements OnInit {
     if(this.sockets.has(checkChat.id)){
       return
     }
+
     const currentSocket = await webSocket({
       url: "ws://localhost:3001/messages/?room=" + checkChat.id,
       resultSelector: (data) => {
@@ -140,7 +141,7 @@ export class HomeComponent implements OnInit {
       },
     });
     this.sockets.set(checkChat.id, currentSocket);
-    this.messages.set(checkChat.id, []);
+    this.messages.set(checkChat.id, checkChat.messages);
 
     this.sockets.get(checkChat.id)?.subscribe(
       msg => {

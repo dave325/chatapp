@@ -11,6 +11,9 @@ RUN go get -u go.mongodb.org/mongo-driver
 RUN go mod download
 RUN go mod vendor
 RUN go mod tidy
+RUN mkdir -p $$GOPATH/bin && \
+    go get github.com/pilu/fresh
 COPY . /go/src/chatapp
 
 EXPOSE 3001
+CMD fresh -c runner.conf main.go

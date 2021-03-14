@@ -38,7 +38,8 @@ export class HomeComponent implements OnInit {
   myWebSocket: WebSocketSubject<any>;
   totalUsers: string = "";
   communicaitonSocket: WebSocketSubject<any>;
-
+  singleSelect: boolean = true;
+  multiUserList: Array<string> = []
   constructor(private http: HttpClient) {
   }
 
@@ -66,11 +67,15 @@ export class HomeComponent implements OnInit {
         console.log(data)
       },
     });
-    this.myWebSocket.next({ user: this.totalUsers.toString() });
+    this.myWebSocket.next({ user: this.totalUsers.toString(), available: true });
     this.myWebSocket.subscribe(
       msg => {
         console.log(msg);
-        if (!this.users.includes(msg.user.toString())) {
+        if (!msg.available && this.users.includes(msg.user.toString())) {
+          this.users = this.users.filter(user => user !== msg.user.toString())
+          return
+        }
+        if (msg.available && !this.users.includes(msg.user.toString())) {
           this.users.push(msg.user.toString());
         }
       },
@@ -122,7 +127,7 @@ export class HomeComponent implements OnInit {
         'Accept': "*/*"
       })
     };
-    if(user === this.totalUsers){
+    if (user === this.totalUsers) {
       return
     }
     const checkChat: Room = await this.http.post<Promise<Room>>(
@@ -130,7 +135,7 @@ export class HomeComponent implements OnInit {
       { "users": [user, this.totalUsers.toString()] },
       httpOptions).toPromise();
     console.log(checkChat.id)
-    if(this.sockets.has(checkChat.id)){
+    if (this.sockets.has(checkChat.id)) {
       return
     }
 
@@ -140,8 +145,9 @@ export class HomeComponent implements OnInit {
         console.log(data)
       },
     });
+    const messages = checkChat.messages ? checkChat.messages : [];
     this.sockets.set(checkChat.id, currentSocket);
-    this.messages.set(checkChat.id, checkChat.messages);
+    this.messages.set(checkChat.id, messages);
 
     this.sockets.get(checkChat.id)?.subscribe(
       msg => {
@@ -150,33 +156,55 @@ export class HomeComponent implements OnInit {
       },
       err => console.log(err)
     )
-
-
-    // for(const userId of this.users){
-    //   user = userId.toString();
-    //   const socket: WebSocketSubject<any> = await webSocket({
-    //       url: 'ws://localhost:3001/messages/?user=' + user,
-    //       resultSelector:(data) => {
-    //         console.log(data)
-    //       },
-    //       openObserver: {
-    //         next: (data) => {
-    //           console.log(data)
-    //         }
-    //       },
-    //     });
-    //   const newSocket: Chat = {key: user, chat: socket};
-    //   this.sockets.set(user, newSocket);
-    //   this.sockets.get(user)?.chat.subscribe(
-    //     msg => {
-    //       console.log(msg);
-    //       this.messages.push({user: msg.User, message: msg.Message});
-    //     },
-    //     err => console.log("dsfs" + err)
-    //   )
-    //   this.currentChat = user;
-    // }
   }
+
+  async connectMultipleUsers(users: Array<string>) {
+
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Accept': "*/*"
+      })
+    };
+    if (!users.includes(this.totalUsers.toString())) {
+      users.push(this.totalUsers)
+    }
+    const checkChat: Room = await this.http.post<Promise<Room>>(
+      "http://localhost:3001/checkChat/",
+      { "users": users },
+      httpOptions).toPromise();
+    console.log(checkChat.id)
+    if (this.sockets.has(checkChat.id)) {
+      return
+    }
+
+    const currentSocket = await webSocket({
+      url: "ws://localhost:3001/messages/?room=" + checkChat.id,
+      resultSelector: (data) => {
+        console.log(data)
+      },
+    });
+    const messages = checkChat.messages ? checkChat.messages : [];
+    this.sockets.set(checkChat.id, currentSocket);
+    this.messages.set(checkChat.id, messages);
+
+    this.sockets.get(checkChat.id)?.subscribe(
+      msg => {
+        console.log(msg);
+        this.messages.get(checkChat.id)?.push({ user: msg.user.username, message: msg.message, room: checkChat.id });
+      },
+      err => console.log(err)
+    )
+  }
+
+  updateMultiUserList(ev: Event){
+    console.log(ev)
+  }
+
+  toggleMultUserSelect(){
+    this.singleSelect = !this.singleSelect
+  }
+
   @HostListener('window:beforeunload')
   async ngOnDestroy(): Promise<void> {
     //Called once, before the instance is destroyed.

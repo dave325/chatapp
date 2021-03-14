@@ -313,6 +313,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		user := UserList{User: keys[0], Available: false}
+		message, _ := json.Marshal(user)
+		hub.broadcast <- message
 		// fmt.Printf("Updated %v Documents!\n", result.ModifiedCount)
 	})
 

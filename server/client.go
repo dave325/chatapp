@@ -61,8 +61,9 @@ type UserMessage struct {
 }
 
 type UserList struct {
-	ID   primitive.ObjectID `bson:"_id,omitempty"`
-	User string             `json:"user" bson:"user"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	User      string             `json:"user" bson:"user"`
+	Available bool               `json:"available" bson:"available"`
 }
 
 var msg UserMessage
@@ -187,14 +188,15 @@ func (c *Client) readUserListPump() {
 	for {
 		err := c.conn.ReadJSON(&user)
 		if err != nil {
-			log.Printf("error: %v", err)
+			log.Printf("read userlist - error: %v", err)
 			break
 		}
 		var message []byte
 		message, err = json.Marshal(user)
+		fmt.Println("read list", user)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("read userlist - error: %v", err)
 			}
 			break
 		}
@@ -216,6 +218,7 @@ func (c *Client) writeUserListPump() {
 	for {
 		select {
 		case curUser, ok := <-c.send:
+			fmt.Println(ok)
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.

@@ -18,7 +18,6 @@ services:
         - "3001:3001" #specify ports forewarding
       expose:
         - "3001"
-      command: go run /go/src/chatapp/main.go /go/src/chatapp/client.go /go/src/chatapp/hub.go
       volumes:
         - ./server/:/go/src/chatapp
       depends_on:

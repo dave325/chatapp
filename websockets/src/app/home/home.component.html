@@ -1,19 +1,22 @@
 <h2>Users</h2>
-<p *ngFor="let user of users" (click)="connectUser(user)">{{ user }}</p>
+<button mat-raised-button color="primary" (click)="toggleMultUserSelect()">Select Multiple Users</button>
+<div *ngIf="singleSelect;else multiSelect" class="col-12">
+  <p *ngFor="let user of users" (click)="connectUser(user)">{{ user }}</p>
+</div>
+<ng-template #multiSelect class="col-12">
+  <mat-checkbox class="col-12" *ngFor="let user of users" (change)="updateMultiUserList($event)">
+    {{user}}
+  </mat-checkbox>
+  <button mat-raised-button color="primary">Select</button>
+
+</ng-template>
 
 <div *ngFor="let recipient of messages | keyvalue">
   <h2>{{ recipient.key }}</h2>
   <form (ngSubmit)="sendMessage(recipient.key)" #heroForm="ngForm">
     <div class="form-group">
       <label for="name">Name</label>
-      <input
-        type="text"
-        class="form-control"
-        id="name"
-        required
-        [(ngModel)]="message.message"
-        name="name"
-      />
+      <input type="text" class="form-control" id="name" required [(ngModel)]="message.message" name="name" />
     </div>
   </form>
   <div *ngFor="let message of recipient.value">

@@ -27,8 +27,6 @@ export class LoginComponentComponent {
 
   async submit() {
     if (this.form.valid) {
-      console.log("yuuurrrr", this.form.value);
-      const formValues = this.form.value;
       // Mark error here 
       const httpCall: User = await this.http.post<User>("http://localhost:3001/login/", this.form.value).toPromise()
       console.log(httpCall)

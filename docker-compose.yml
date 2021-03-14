@@ -35,15 +35,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
       MONGO_INITDB_DATABASE: crm
-
-  mongoclient:
-    image: mongoclient/mongoclient:latest
-    container_name: crmmongoclient
-    hostname: mongoclient
-    depends_on:
-      - database
-    ports:
-      - 3300:3000
     
 volumes:
   crmmongo:

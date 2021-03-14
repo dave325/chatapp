@@ -27,8 +27,7 @@ import (
 // Create the JWT key used to create the signature
 var jwtKey = []byte("my-secret-password") // Used for demonstration and github purposes
 var addr = flag.String("addr", ":3001", "http service address")
-var ctx, cancel = context.WithTimeout(context.Background(), 1000*time.Second)
-var client, mongoErr = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://root:root@mongodb:27017/"))
+var client, mongoErr = mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://root:root@database:27017/"))
 
 var roomMap map[string]*Hub = make(map[string]*Hub)
 
@@ -77,16 +76,27 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	log.Println("Starting")
+	if mongoErr != nil {
+		log.Fatal(mongoErr)
+	}
+
 	// Needed here so go will allow outside origins, currently set to allow everything
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	defer cancel()
 
 	defer func() {
-		if mongoErr = client.Disconnect(ctx); mongoErr != nil {
+		if mongoErr = client.Disconnect(context.TODO()); mongoErr != nil {
 			panic(mongoErr)
 		}
 	}()
+
+	// Check the connection
+	mongoErr = client.Ping(context.TODO(), nil)
+
+	if mongoErr != nil {
+		log.Fatal(mongoErr)
+	}
+
+	fmt.Println("Connected to MongoDB!")
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	flag.Parse()
@@ -116,7 +126,7 @@ func main() {
 		key := keys[0]
 
 		filter := bson.M{"username": key}
-		err := collection.FindOne(ctx, filter).Decode(&result)
+		err := collection.FindOne(context.TODO(), filter).Decode(&result)
 
 		if err != nil {
 			log.Println(err.Error())
@@ -126,7 +136,7 @@ func main() {
 			return
 		} else {
 			_, err := collection.UpdateOne(
-				ctx,
+				context.TODO(),
 				bson.M{"username": key},
 				bson.D{
 					{"$set", bson.M{"available": true}},
@@ -139,15 +149,15 @@ func main() {
 		}
 
 		// Fetch avialable users in db
-		cur, err := collection.Find(ctx, bson.M{"available": true})
-		defer cur.Close(ctx)
+		cur, err := collection.Find(context.TODO(), bson.M{"available": true})
+		defer cur.Close(context.TODO())
 		print(cur.RemainingBatchLength())
 		totalUser := make([]string, cur.RemainingBatchLength())
 		if err != nil {
 			log.Fatal(err)
 		}
 		currentIdx := 0
-		for cur.Next(ctx) {
+		for cur.Next(context.TODO()) {
 			var currentUser User
 			err := cur.Decode(&currentUser)
 			if err != nil {
@@ -207,7 +217,7 @@ func main() {
 
 		// Search if a db already has these users in a room
 		filter := bson.D{{"users", bson.M{"$all": bsonArr, "$size": len(currentRoom.Users)}}}
-		err = collection.FindOne(ctx, filter).Decode(&currentRoom)
+		err = collection.FindOne(context.TODO(), filter).Decode(&currentRoom)
 		// If the no rooms exist, create an entry in db
 		if err != nil {
 			insertID, _ := collection.InsertOne(context.Background(), bson.M{"users": currentRoom.Users})
@@ -227,15 +237,15 @@ func main() {
 			filterRoom := currentRoom.ID.Hex()
 			// log.Println(filterRoom)
 			updatedFilter := bson.M{"room": filterRoom}
-			cursor, cursorErr := collection.Find(ctx, updatedFilter)
+			cursor, cursorErr := collection.Find(context.TODO(), updatedFilter)
 			if cursorErr != nil {
 				log.Println(cursorErr)
 			}
-			defer cursor.Close(ctx)
+			defer cursor.Close(context.TODO())
 			currentIdx := 0
 			// Fetch messages for the current room
 			currentMessages := make([]*UserMessage, cursor.RemainingBatchLength())
-			for cursor.Next(ctx) {
+			for cursor.Next(context.TODO()) {
 				var message UserMessage
 				if err = cursor.Decode(&message); err != nil {
 					log.Fatal(err)
@@ -270,7 +280,7 @@ func main() {
 		_, exists := roomMap[currentRoom]
 		roomObjID, _ := primitive.ObjectIDFromHex(currentRoom)
 		filter := bson.M{"_id": roomObjID}
-		err := collection.FindOne(ctx, filter).Decode(&rooms)
+		err := collection.FindOne(context.TODO(), filter).Decode(&rooms)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -294,7 +304,7 @@ func main() {
 			print("ehhh")
 		}
 		_, err := collection.UpdateOne(
-			ctx,
+			context.TODO(),
 			bson.M{"username": keys[0]},
 			bson.D{
 				{"$set", bson.D{{"available", false}}},
@@ -326,7 +336,7 @@ func main() {
 		// The second argument is the cost of hashing, which we arbitrarily set as 8 (this value can be more or less, depending on the computing power you wish to utilize)
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(currentUser.Password), 8)
 		filter := bson.M{"username": currentUser.Username}
-		count, _ := collection.CountDocuments(ctx, filter)
+		count, _ := collection.CountDocuments(context.TODO(), filter)
 		w.Header().Set("Content-Type", "application/json")
 		if count > 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -351,19 +361,22 @@ func main() {
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		b, err := ioutil.ReadAll(r.Body)
+		collection := client.Database("chat").Collection("users")
+		var currentUser User
+		// err = json.Unmarshal(b, &currentUser)
+		err := json.NewDecoder(r.Body).Decode(&currentUser)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			fmt.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer r.Body.Close()
-		var currentUser User
-		err = json.Unmarshal(b, &currentUser)
-		collection := client.Database("chat").Collection("users")
 		var userFromDb User
-		err = collection.FindOne(ctx, bson.M{"username": currentUser.Username}).Decode(&userFromDb)
-
-		log.Println(currentUser.Username)
+		err = collection.FindOne(context.TODO(), bson.M{"username": currentUser.Username}).Decode(&userFromDb)
+		if err != nil {
+			fmt.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		if err = bcrypt.CompareHashAndPassword([]byte(userFromDb.Password), []byte(currentUser.Password)); err != nil {
 			// If the two passwords don't match, return a 401 status
 			w.WriteHeader(http.StatusUnauthorized)

@@ -39,7 +39,9 @@ export class HomeComponent implements OnInit {
   totalUsers: string = "";
   communicaitonSocket: WebSocketSubject<any>;
   singleSelect: boolean = true;
-  multiUserList: Array<string> = []
+  multiUserList: Set<string> = new Set()
+  usersInChat: Map<string,string[]> = new Map<string,string[]>()
+  
   constructor(private http: HttpClient) {
   }
 
@@ -59,7 +61,7 @@ export class HomeComponent implements OnInit {
     console.log(user)
 
     this.totalUsers = userExist ? existingUser.username : user.currentUser;
-    this.users = user.users.filter((user: string) => user.length);
+    this.users = user.users.filter((user: string) => user.length && user !== this.totalUsers);
 
     this.myWebSocket = webSocket({
       url: "ws://localhost:3001/userList/?room=1",
@@ -75,7 +77,7 @@ export class HomeComponent implements OnInit {
           this.users = this.users.filter(user => user !== msg.user.toString())
           return
         }
-        if (msg.available && !this.users.includes(msg.user.toString())) {
+        if (msg.available && !this.users.includes(msg.user.toString()) && msg.user.toString() !== this.totalUsers.toString()) {
           this.users.push(msg.user.toString());
         }
       },
@@ -118,8 +120,16 @@ export class HomeComponent implements OnInit {
     this.sockets.get(room)?.next(this.message);
     // tslint:disable-next-line: radix
     this.message = { user: this.totalUsers.toString(), message: "", room: "" };
+    this.scrollToBottom(room)
   }
 
+  scrollToBottom(id: string ): void {
+    try {
+      const el: any = document.getElementById(id)
+      console.log(el)
+      el.scrollTop = el.scrollHeight;
+    } catch(err) { }                 
+} 
   async connectUser(user: string): Promise<void> {
     const httpOptions = {
       headers: new HttpHeaders({
@@ -138,6 +148,8 @@ export class HomeComponent implements OnInit {
     if (this.sockets.has(checkChat.id)) {
       return
     }
+    console.log(checkChat)
+    this.usersInChat.set(checkChat.id, checkChat.users)
 
     const currentSocket = await webSocket({
       url: "ws://localhost:3001/messages/?room=" + checkChat.id,
@@ -152,13 +164,13 @@ export class HomeComponent implements OnInit {
     this.sockets.get(checkChat.id)?.subscribe(
       msg => {
         console.log(msg);
-        this.messages.get(checkChat.id)?.push({ user: msg.user.username, message: msg.message, room: checkChat.id });
+        this.messages.get(checkChat.id)?.push({ user: msg.user, message: msg.message, room: checkChat.id });
       },
       err => console.log(err)
     )
   }
 
-  async connectMultipleUsers(users: Array<string>) {
+  async connectMultipleUsers() {
 
     const httpOptions = {
       headers: new HttpHeaders({
@@ -166,9 +178,9 @@ export class HomeComponent implements OnInit {
         'Accept': "*/*"
       })
     };
-    if (!users.includes(this.totalUsers.toString())) {
-      users.push(this.totalUsers)
-    }
+    const users = Array.from(this.multiUserList)
+    users.push(this.totalUsers.toString())
+    console.log(users)
     const checkChat: Room = await this.http.post<Promise<Room>>(
       "http://localhost:3001/checkChat/",
       { "users": users },
@@ -178,6 +190,7 @@ export class HomeComponent implements OnInit {
       return
     }
 
+    console.log(checkChat)
     const currentSocket = await webSocket({
       url: "ws://localhost:3001/messages/?room=" + checkChat.id,
       resultSelector: (data) => {
@@ -185,6 +198,8 @@ export class HomeComponent implements OnInit {
       },
     });
     const messages = checkChat.messages ? checkChat.messages : [];
+    this.usersInChat.set(checkChat.id, checkChat.users)
+
     this.sockets.set(checkChat.id, currentSocket);
     this.messages.set(checkChat.id, messages);
 
@@ -195,10 +210,16 @@ export class HomeComponent implements OnInit {
       },
       err => console.log(err)
     )
+    this.singleSelect = !this.singleSelect
+
   }
 
-  updateMultiUserList(ev: Event){
-    console.log(ev)
+  updateMultiUserList(user: string){
+    if(this.multiUserList.has(user)){
+      this.multiUserList.delete(user)
+    }else{
+      this.multiUserList.add(user)
+    }
   }
 
   toggleMultUserSelect(){

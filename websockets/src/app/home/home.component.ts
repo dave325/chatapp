@@ -31,7 +31,7 @@ interface ResponseData extends Object {
 export class HomeComponent implements OnInit {
   title = 'websockets';
   users: Array<string> = [];
-  message: UserMessage = { user: "1", message: "", room: "" };
+  message: UserMessage;
   messages: Map<string, Array<UserMessage>> = new Map<string, Array<UserMessage>>();
   sockets: Map<string, WebSocketSubject<any>> = new Map<string, WebSocketSubject<any>>();
   currentChat: string = "";
@@ -84,28 +84,8 @@ export class HomeComponent implements OnInit {
       },
       err => console.log("dsfs" + err)
     )
-
-    // this.communicaitonSocket = webSocket({
-    //   url: "ws://localhost:3001/messages/",
-    //   resultSelector:(data) => {
-    //     console.log(data)
-    //   },
-    //   openObserver: {
-    //     next: (data) => {
-    //       console.log(data)
-    //     }
-    //   },
-    // });
-
-    // this.communicaitonSocket.subscribe(
-    //   msg => {
-    //     console.log(msg);
-    //     if(msg.message.length){
-    //       this.messages.push({user: msg.user, message: msg.message});
-    //     }
-    //   },
-    //   err => console.log("dsfs" + err)
-    // )
+    this.message = { user: this.totalUsers, message: "", room: "" };
+    
 
   }
 
@@ -140,6 +120,7 @@ export class HomeComponent implements OnInit {
       } catch (err) { }
     }, 100)
   }
+
   async connectUser(user: string): Promise<void> {
     const httpOptions = {
       headers: new HttpHeaders({

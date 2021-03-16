@@ -10,6 +10,7 @@ import { RegistrationComponentComponent } from './registration-component/registr
 import { LoginComponentComponent } from './login-component/login-component.component';
 import { HomeComponent } from './home/home.component';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatCardModule} from '@angular/material/card';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
     ReactiveFormsModule,
     BrowserAnimationsModule,
     HttpClientModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatCardModule
   ],
   providers: [],
   schemas:[CUSTOM_ELEMENTS_SCHEMA],

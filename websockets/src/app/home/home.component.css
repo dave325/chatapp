@@ -1,4 +1,10 @@
 .chatRoom {
-    max-height: 400px;
+    posiiton:relative;
+    margin:5px;
+}
+
+.chat-content {
     overflow-y: scroll;
+    max-height: 350px;
+
 }

@@ -14,22 +14,28 @@
   </ng-template>
 </div>
 <div class="row">
-  <div *ngFor="let recipient of messages | keyvalue" class="col-12 col-md-4 chatRoom" id="chat-{{recipient.key}}">
-    <h2><span *ngFor="let user of usersInChat.get(recipient.key); last as isLast">
-        <ng-template *ngIf="isLast; then lastItem; else notLast"></ng-template>
-        <ng-template #notLast>{{user}}, </ng-template>
-        <ng-template #lastItem>{{user}}</ng-template>
-      </span></h2>
-    <form (ngSubmit)="sendMessage(recipient.key)" #heroForm="ngForm">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" class="form-control" id="name" required [(ngModel)]="message.message" name="name" />
+  <mat-card *ngFor="let recipient of messages | keyvalue" class="col-12 col-md-4 chatRoom" >
+    <mat-card-header>
+      <mat-card-title><span *ngFor="let user of usersInChat.get(recipient.key); last as isLast">
+          <ng-template *ngIf="isLast; then lastItem; else notLast"></ng-template>
+          <ng-template #notLast>{{user}}, </ng-template>
+          <ng-template #lastItem>{{user}}</ng-template>
+        </span></mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="chat-content" id="chat-{{recipient.key}}" #chatRoom>
+      <div *ngFor="let message of recipient.value">
+        <h3>{{ message.user }}</h3>
+        <p>{{ message.message }}</p>
+        <p>{{ message.room }}</p>
       </div>
-    </form>
-    <div *ngFor="let message of recipient.value">
-      <h3>{{ message.user }}</h3>
-      <p>{{ message.message }}</p>
-      <p>{{ message.room }}</p>
-    </div>
-  </div>
+    </mat-card-content>
+    <mat-card-actions >
+      <form (ngSubmit)="sendMessage(recipient.key)" #heroForm="ngForm">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" class="form-control" id="name" required [(ngModel)]="message.message" name="name" />
+        </div>
+      </form>
+    </mat-card-actions>
+  </mat-card>
 </div>

@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { map, tap, catchError, retry } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -40,8 +40,9 @@ export class HomeComponent implements OnInit {
   communicaitonSocket: WebSocketSubject<any>;
   singleSelect: boolean = true;
   multiUserList: Set<string> = new Set()
-  usersInChat: Map<string,string[]> = new Map<string,string[]>()
-  
+  usersInChat: Map<string, string[]> = new Map<string, string[]>()
+  @ViewChildren("chatRoom") chatRooms: QueryList<ElementRef>
+
   constructor(private http: HttpClient) {
   }
 
@@ -123,13 +124,22 @@ export class HomeComponent implements OnInit {
     this.scrollToBottom(room)
   }
 
-  scrollToBottom(id: string ): void {
-    try {
-      const el: any = document.getElementById(id)
-      console.log(el)
-      el.scrollTop = el.scrollHeight;
-    } catch(err) { }                 
-} 
+  scrollToBottom(id: string): void {
+    setTimeout(() => {
+      try {
+        const el: any | undefined = this.chatRooms.find((i: any) => {
+          return i.nativeElement.id === "chat-" + id;
+        });
+        el.nativeElement.scroll(
+          {
+            top: el.nativeElement.scrollHeight,
+            left: 0,
+            behavior: 'smooth'
+          }
+        );
+      } catch (err) { }
+    }, 100)
+  }
   async connectUser(user: string): Promise<void> {
     const httpOptions = {
       headers: new HttpHeaders({
@@ -168,6 +178,7 @@ export class HomeComponent implements OnInit {
       },
       err => console.log(err)
     )
+    this.scrollToBottom(checkChat.id)
   }
 
   async connectMultipleUsers() {
@@ -214,15 +225,15 @@ export class HomeComponent implements OnInit {
 
   }
 
-  updateMultiUserList(user: string){
-    if(this.multiUserList.has(user)){
+  updateMultiUserList(user: string) {
+    if (this.multiUserList.has(user)) {
       this.multiUserList.delete(user)
-    }else{
+    } else {
       this.multiUserList.add(user)
     }
   }
 
-  toggleMultUserSelect(){
+  toggleMultUserSelect() {
     this.singleSelect = !this.singleSelect
   }
 

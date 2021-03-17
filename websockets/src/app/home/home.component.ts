@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { AfterContentChecked, AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { map, tap, catchError, retry } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -28,7 +28,7 @@ interface ResponseData extends Object {
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, AfterContentChecked, OnDestroy {
   title = 'websockets';
   users: Array<string> = [];
   message: UserMessage;
@@ -41,6 +41,7 @@ export class HomeComponent implements OnInit {
   singleSelect: boolean = true;
   multiUserList: Set<string> = new Set()
   usersInChat: Map<string, string[]> = new Map<string, string[]>()
+  chatHasScrolled: Map<string, boolean> = new Map<string, boolean>()
   @ViewChildren("chatRoom") chatRooms: QueryList<ElementRef>
 
   constructor(private http: HttpClient) {
@@ -85,7 +86,7 @@ export class HomeComponent implements OnInit {
       err => console.log("dsfs" + err)
     )
     this.message = { user: this.totalUsers, message: "", room: "" };
-    
+
 
   }
 
@@ -107,16 +108,28 @@ export class HomeComponent implements OnInit {
   scrollToBottom(id: string): void {
     setTimeout(() => {
       try {
-        const el: any | undefined = this.chatRooms.find((i: any) => {
-          return i.nativeElement.id === "chat-" + id;
-        });
-        el.nativeElement.scroll(
+        const el = this.chatRooms.find(r => r.nativeElement.id === "chat-" + id)
+        console.log(el)
+        el?.nativeElement.scroll(
           {
             top: el.nativeElement.scrollHeight,
             left: 0,
             behavior: 'smooth'
           }
         );
+        this.chatHasScrolled.set(`chat-${id}`, true)
+        // this.chatRooms.forEach((i: any) => {
+        //   console.log(i.nativeElement.scrollTop)
+        //   if (i.nativeElement.scrollTop === 0) {
+        //     i.nativeElement.scroll(
+        //       {
+        //         top: i.nativeElement.scrollHeight,
+        //         left: 0,
+        //         behavior: 'smooth'
+        //       }
+        //     );
+        //   }
+        // });
       } catch (err) { }
     }, 100)
   }
@@ -203,6 +216,7 @@ export class HomeComponent implements OnInit {
       err => console.log(err)
     )
     this.singleSelect = !this.singleSelect
+    this.scrollToBottom(checkChat.id)
 
   }
 
@@ -232,4 +246,16 @@ export class HomeComponent implements OnInit {
     await this.communicaitonSocket.unsubscribe();
   }
 
+  ngAfterContentChecked() {
+    if(!this.chatRooms){
+      return
+    }
+    this.chatRooms.forEach((i: any) => {
+      if(this.chatHasScrolled.has(i.nativeElement.id) && i.nativeElement.scrollTop > 0){
+        i.nativeElement.scrollTop = i.nativeElement.scrollTop
+      }else{
+        i.nativeElement.scrollTop = i.nativeElement.scrollHeight
+      }
+    })
+  }
 }

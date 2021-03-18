@@ -1,5 +1,4 @@
 import { AfterContentChecked, AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
-import { map, tap, catchError, retry } from 'rxjs/operators';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
@@ -118,18 +117,6 @@ export class HomeComponent implements OnInit, AfterContentChecked, OnDestroy {
           }
         );
         this.chatHasScrolled.set(`chat-${id}`, true)
-        // this.chatRooms.forEach((i: any) => {
-        //   console.log(i.nativeElement.scrollTop)
-        //   if (i.nativeElement.scrollTop === 0) {
-        //     i.nativeElement.scroll(
-        //       {
-        //         top: i.nativeElement.scrollHeight,
-        //         left: 0,
-        //         behavior: 'smooth'
-        //       }
-        //     );
-        //   }
-        // });
       } catch (err) { }
     }, 100)
   }

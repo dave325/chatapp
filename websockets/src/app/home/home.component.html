@@ -14,7 +14,8 @@
   </ng-template>
 </div>
 <div class="row">
-  <mat-card *ngFor="let recipient of messages | keyvalue" class="col-12 col-md-4 chatRoom" >
+  <mat-card *ngFor="let recipient of messages | keyvalue" class="col-12 col-md-4 chatRoom">
+    <p class="close" (click)="closeChat(recipient.key)">X</p>
     <mat-card-header>
       <mat-card-title><span *ngFor="let user of usersInChat.get(recipient.key); last as isLast">
           <ng-template *ngIf="isLast; then lastItem; else notLast"></ng-template>

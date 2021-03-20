@@ -7,3 +7,10 @@
     overflow-y: scroll;
     max-height: 350px;
 }
+
+.close {
+    position: absolute;
+    top: -1%;
+    right: -1%;
+    cursor:pointer;
+  }

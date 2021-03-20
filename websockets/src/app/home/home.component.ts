@@ -258,4 +258,13 @@ export class HomeComponent implements OnInit, AfterContentChecked, OnDestroy {
       }
     })
   }
+
+  async closeChat(room: string) {
+    console.log(room)
+    const chatRoom: WebSocketSubject<any> | undefined = this.sockets.get(room);
+    await chatRoom?.unsubscribe() 
+    await chatRoom?.complete()
+    this.sockets.delete(room)
+    this.messages.delete(room)
+  }
 }
